@@ -1,0 +1,84 @@
+#include <SPI.h>
+#include <LoRa.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+
+#define LORA_SCK 5
+#define LORA_MISO 19
+#define LORA_MOSI 27
+#define LORA_SS 18
+#define LORA_RST 14
+#define LORA_DIO0 26
+
+const int ledPin = 3;
+const int buttonPin = 2;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(ledPin, OUTPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
+
+  // OLED
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println("OLED no encontrada");
+    while (true);
+  }
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(SSD1306_WHITE);
+
+  // LoRa
+  SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_SS);
+  LoRa.setPins(LORA_SS, LORA_RST, LORA_DIO0);
+
+  if (!LoRa.begin(915E6)) {
+    Serial.println("LoRa no iniciado");
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.print("LoRa ERROR");
+    display.display();
+    while (true);
+  }
+
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("Receptor OK");
+  display.display();
+  delay(1500);
+}
+
+void loop() {
+  int buttonState = digitalRead(buttonPin);
+
+  if (buttonState == LOW) {
+    digitalWrite(ledPin, HIGH);
+    LoRa.beginPacket();
+    LoRa.print("1");
+    LoRa.endPacket();
+    mostrarEstado(1);
+  } else {
+    digitalWrite(ledPin, LOW);
+    LoRa.beginPacket();
+    LoRa.print("0");
+    LoRa.endPacket();
+    mostrarEstado(0);
+  }
+
+  delay(200);  // Antirrebote simple
+}
+
+void mostrarEstado(int estado) {
+  display.clearDisplay();
+  display.setCursor(0, 20);
+  display.print("Estado = ");
+  display.print(estado);
+  display.display();
+}
