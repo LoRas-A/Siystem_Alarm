@@ -1,0 +1,40 @@
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
+
+SoftwareSerial mySerial(10, 11); // RX, TX para DFPlayer Mini
+DFRobotDFPlayerMini dfplayer;
+
+const int buttonPin = 2;
+bool botonPresionado = false;
+
+void setup() {
+  Serial.begin(115200);
+  mySerial.begin(9600);
+
+  pinMode(buttonPin, INPUT_PULLUP);
+
+  if (!dfplayer.begin(mySerial)) {
+    Serial.println("No se pudo inicializar DFPlayer Mini");
+    while(true);
+  }
+  Serial.println("DFPlayer Mini listo");
+
+  dfplayer.volume(20); // Volumen (0-30)
+
+  // Reproduce el primer archivo al iniciar
+  dfplayer.play(1);
+}
+
+void loop() {
+  // Leer botón (activo bajo)
+  if (digitalRead(buttonPin) == LOW) {
+    if (!botonPresionado) {
+      botonPresionado = true;
+
+      Serial.println("Botón presionado, reproduciendo archivo 2");
+      dfplayer.play(2);
+    }
+  } else {
+    botonPresionado = false;
+  }
+}
